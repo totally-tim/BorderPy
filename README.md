@@ -1,6 +1,6 @@
 # Borderly GUI
 
-A Python reimplementation of the Borderly image processing application with a graphical user interface that allows drag-and-drop functionality and interactive controls.
+A Python reimplementation of the Borderly image processing of Paul Bidwell's https://github.com/paulbidwell/Borderly application with a graphical user interface.
 
 ## Features
 
