@@ -1,0 +1,31 @@
+{
+  "Settings": {
+    "InputDirectory": "~/Pictures/Input",
+    "OutputDirectory": "~/Pictures/Output",
+    "ProcessedFileOption": "Move",
+    "ProcessedDirectory": "~/Pictures/Processed"
+  },
+  "Profiles": [
+    {
+      "Name": "WhiteBorder",
+      "BorderWidth": "50px",
+      "BorderColour": "#FFFFFF",
+      "Quality": 95
+    },
+    {
+      "Name": "BlackBorder5",
+      "BorderWidth": "5%",
+      "BorderColour": "#000000",
+      "Quality": 90,
+      "ResizeWidth": "50%",
+      "ResizeHeight": "50%"
+    },
+    {
+      "Name": "RedBorder10",
+      "BorderWidth": "10%",
+      "BorderColour": "#FF0000",
+      "Quality": 85,
+      "ResizeWidth": "1200px"
+    }
+  ]
+}

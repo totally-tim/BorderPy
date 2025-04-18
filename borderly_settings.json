@@ -1,0 +1,25 @@
+{
+  "Settings": {
+    "InputDirectory": "/Users/timkraus",
+    "OutputDirectory": "/Users/timkraus/Borderly_Output",
+    "ProcessedFileOption": "None",
+    "RecentFiles": [
+      "/Users/timkraus/Downloads/000013190031.jpg"
+    ],
+    "MaxRecentFiles": 10
+  },
+  "Profiles": [
+    {
+      "Name": "WhiteBorder",
+      "BorderWidth": "10%",
+      "BorderColour": "#FFFFFF",
+      "Quality": 90
+    },
+    {
+      "Name": "Black Border",
+      "BorderWidth": "20%",
+      "BorderColour": "#000000",
+      "Quality": 90
+    }
+  ]
+}
