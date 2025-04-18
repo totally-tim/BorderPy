@@ -4,10 +4,7 @@ import json
 import time
 import shutil
 import threading
-import re
 import queue
-import subprocess
-import tempfile
 from pathlib import Path
 from enum import Enum, auto
 from typing import List, Dict, Optional, Union, Tuple
@@ -309,17 +306,8 @@ class BorderlyApp:
         self.selected_files = []
         self.preview_image = None
         self.processing = False
-        self.drop_target = None
         self.task_queue = queue.Queue()
         self.results = []
-        
-        # For drag and drop
-        self.drag_drop_active = False
-        
-        # Add file type handling for macOS
-        if sys.platform == 'darwin':
-            # Create applescript handlers
-            self._create_applescript_handlers()
         
         # Create menu
         self._create_menu()
@@ -415,34 +403,15 @@ class BorderlyApp:
         self.preview_canvas = tk.Canvas(preview_frame, bg="light gray")
         self.preview_canvas.pack(fill=tk.BOTH, expand=True)
         
-        # Set up canvas for drag and drop
+        # Set up canvas with a simple background
         self.preview_canvas.config(bg="#f0f0f0")
         
-        # Add a dashed outline to indicate drop zone
-        self.drop_outline = self.preview_canvas.create_rectangle(
-            20, 20, 380, 380, 
-            outline="gray", dash=(5, 5), width=2
-        )
-        
-        # Add drop text
-        self.drop_text = self.preview_canvas.create_text(
+        # Add text when no image is selected
+        self.preview_text = self.preview_canvas.create_text(
             200, 200, 
-            text="Drop image files here\nor use the buttons above to select files",
+            text="Select an image using the buttons above\nto see a preview",
             fill="#666666", font=("Helvetica", 14)
         )
-        
-        # Add icon representation
-        self.drop_icon = self.preview_canvas.create_rectangle(
-            175, 120, 225, 170, 
-            fill="#dddddd", outline="#999999", width=1
-        )
-        self.drop_arrow = self.preview_canvas.create_line(
-            200, 70, 200, 110, 
-            arrow=tk.LAST, width=2, fill="#666666"
-        )
-        
-        # Now that the preview canvas exists, set up drag and drop
-        self._setup_drag_drop()
         
         # Control frame
         control_frame = ttk.Frame(self.main_tab, padding=10)
@@ -459,9 +428,18 @@ class BorderlyApp:
         # Update profiles dropdown
         self._update_profile_dropdown()
         
+        # Process with all profiles option
+        self.use_all_profiles_var = tk.BooleanVar(value=False)
+        use_all_profiles_check = ttk.Checkbutton(
+            control_frame, 
+            text="Process with all profiles", 
+            variable=self.use_all_profiles_var
+        )
+        use_all_profiles_check.grid(row=0, column=2, padx=5, pady=5)
+        
         # Process button
         self.process_btn = ttk.Button(control_frame, text="Process Images", command=self._process_images)
-        self.process_btn.grid(row=0, column=2, padx=5, pady=5)
+        self.process_btn.grid(row=0, column=3, padx=5, pady=5)
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
@@ -881,19 +859,31 @@ Features:
         self.task_queue = queue.Queue()
         self.results = []
         
-        # Get the selected profile
-        profile_name = self.profile_var.get()
-        selected_profile = next((p for p in self.profiles if p.name == profile_name), None)
+        # Check if we should use all profiles
+        use_all_profiles = self.use_all_profiles_var.get()
         
-        if not selected_profile:
-            messagebox.showerror("Error", "No profile selected")
-            self.processing = False
-            return
-        
-        # Prepare file-profile combinations
-        total_tasks = len(self.selected_files)
-        for file_path in self.selected_files:
-            self.task_queue.put((file_path, selected_profile))
+        if use_all_profiles:
+            # Use all profiles
+            profiles_to_use = self.profiles
+            total_tasks = len(self.selected_files) * len(profiles_to_use)
+            
+            for file_path in self.selected_files:
+                for profile in profiles_to_use:
+                    self.task_queue.put((file_path, profile))
+        else:
+            # Get the selected profile
+            profile_name = self.profile_var.get()
+            selected_profile = next((p for p in self.profiles if p.name == profile_name), None)
+            
+            if not selected_profile:
+                messagebox.showerror("Error", "No profile selected")
+                self.processing = False
+                return
+            
+            # Prepare file-profile combinations with just the selected profile
+            total_tasks = len(self.selected_files)
+            for file_path in self.selected_files:
+                self.task_queue.put((file_path, selected_profile))
         
         # Start worker threads
         num_workers = min(os.cpu_count() or 2, 4)  # Use up to 4 worker threads
@@ -1004,119 +994,6 @@ Features:
     
     def _option_changed(self):
         self._update_processed_dir_visibility()
-        
-    def _setup_drag_drop(self):
-        """Setup native drag and drop functionality using Tk."""
-        # Make the preview canvas accept drag and drop
-        self.preview_canvas.bind("<ButtonRelease-1>", self._check_drop)
-        
-        # Add hover effects to indicate it's a drop target
-        self.preview_canvas.bind("<Enter>", self._on_canvas_enter)
-        self.preview_canvas.bind("<Leave>", self._on_canvas_leave)
-        
-        # Enable the preview canvas to track drag events
-        if sys.platform == 'darwin':  # macOS
-            self.root.bind("<Command-KeyRelease>", self._check_open_with_app)
-        else:  # Windows/Linux
-            self.root.bind("<Control-KeyRelease>", self._check_open_with_app)
-            
-    def _on_canvas_enter(self, event):
-        """Highlight the canvas when mouse enters."""
-        if not self.selected_files:  # Only highlight if no files are selected
-            self.preview_canvas.itemconfig(self.drop_outline, outline="#3498db", width=3)
-            self.preview_canvas.itemconfig(self.drop_text, fill="#3498db")
-            self.preview_canvas.itemconfig(self.drop_arrow, fill="#3498db", width=3)
-    
-    def _on_canvas_leave(self, event):
-        """Remove highlight when mouse leaves."""
-        if not self.selected_files:  # Only restore if no files are selected
-            self.preview_canvas.itemconfig(self.drop_outline, outline="gray", width=2)
-            self.preview_canvas.itemconfig(self.drop_text, fill="#666666")
-            self.preview_canvas.itemconfig(self.drop_arrow, fill="#666666", width=2)
-            
-    def _create_applescript_handlers(self):
-        """Create AppleScript handlers for macOS drag and drop."""
-        # Create temp directory for scripts if it doesn't exist
-        script_dir = os.path.join(tempfile.gettempdir(), "borderly_scripts")
-        os.makedirs(script_dir, exist_ok=True)
-        
-        # Create the receiver script
-        receiver_script = os.path.join(script_dir, "receive_files.applescript")
-        with open(receiver_script, "w") as f:
-            f.write("""
-            on open_with_app(file_paths)
-                set the_paths to ""
-                repeat with a_path in file_paths
-                    set the_paths to the_paths & (POSIX path of a_path) & "|"
-                end repeat
-                
-                -- Save the paths to a temporary file
-                set temp_file to (path to temporary items folder as text) & "borderly_dropped_files.txt"
-                set file_ref to open for access temp_file with write permission
-                write the_paths to file_ref
-                close access file_ref
-                
-                return "OK"
-            end open_with_app
-            """)
-        
-        # Compile the AppleScript
-        try:
-            subprocess.run(["osacompile", "-o", receiver_script + ".scpt", receiver_script])
-        except:
-            # Silently fail if osacompile is not available
-            pass
-    
-    def _check_drop(self, event):
-        """Check if files were dropped on the application."""
-        # Check for dropped files on macOS
-        if sys.platform == 'darwin':
-            drop_file = os.path.join(tempfile.gettempdir(), "borderly_dropped_files.txt")
-            if os.path.exists(drop_file):
-                try:
-                    with open(drop_file, "r") as f:
-                        content = f.read().strip()
-                        if content:
-                            # Parse file paths separated by |
-                            file_paths = content.split("|")
-                            file_paths = [p for p in file_paths if p]  # Remove empty entries
-                            self._process_dropped_files(file_paths)
-                            
-                            # Remove the temp file
-                            os.remove(drop_file)
-                except:
-                    pass
-                    
-    def _check_open_with_app(self, event):
-        """Check if files were opened with the app."""
-        # For handling 'Open With' on macOS/Linux/Windows
-        self._check_drop(None)
-    
-    def _process_dropped_files(self, file_paths):
-        """Process a list of dropped file paths."""
-        # Filter for valid image files
-        allowed_extensions = {'.jpg', '.jpeg', '.png', '.tif', '.tiff'}
-        valid_files = []
-        
-        for file_path in file_paths:
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext in allowed_extensions:
-                valid_files.append(file_path)
-        
-        if valid_files:
-            self.selected_files = valid_files
-            self.files_label.config(text=f"{len(self.selected_files)} files selected")
-            
-            # Add to recent files
-            for file_path in valid_files:
-                self.settings.add_recent_file(file_path)
-            
-            # Update the recent files menu
-            self._update_recent_files_menu()
-            
-            # Update preview with first image
-            if len(self.selected_files) > 0:
-                self._update_preview()
         
     def _browse_directory(self):
         """Browse for a directory and load all image files from it."""
@@ -1355,17 +1232,7 @@ Features:
 
 def main():
     root = tk.Tk()
-    
-    # Enable drag and drop by accepting command line arguments
-    # This is important for Windows and Linux file associations
-    args = sys.argv[1:]
-    
     app = BorderlyApp(root)
-    
-    # If the application was launched with files, process them
-    if args:
-        app._process_dropped_files(args)
-    
     root.mainloop()
 
 

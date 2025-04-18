@@ -1,5 +1,5 @@
 #!/bin/bash
-# Comprehensive installation script for Borderly
+# Installation script for Borderly
 
 echo "=== Borderly Installation Script ==="
 echo "This script will set up Borderly with all necessary permissions and dependencies."
@@ -19,7 +19,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     if [ "$choice" == "1" ]; then
         echo "Installing with Homebrew..."
         ./run_brew.sh
-        echo "Installation complete! You can now run Borderly using ./run_brew.sh or ./run_macos.sh"
+        echo "Installation complete! You can now run Borderly using ./run_brew.sh"
     else
         echo "Installing with pip..."
         ./run.sh

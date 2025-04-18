@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 # Run the application
 echo "Starting Borderly GUI..."
-python borderly_gui.py "$@" || {
+python borderly_gui.py || {
     echo "Error running Borderly. Please check the error message above."
     echo "If using a virtual environment, make sure all dependencies are properly installed."
     echo "Try running: pip install -r requirements.txt"

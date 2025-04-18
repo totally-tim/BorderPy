@@ -5,7 +5,7 @@ A Python reimplementation of the Borderly image processing application with a gr
 ## Features
 
 - User-friendly interface for image processing
-- Drag-and-drop functionality for easy image processing
+- Batch directory processing for multiple files
 - Interactive controls with sliders and color pickers
 - Live preview of image processing results
 - Multiple profile support for different border and resize settings
@@ -87,9 +87,6 @@ chmod +x run.sh run_brew.sh run_macos.sh
 
 # Using Homebrew (recommended)
 ./run_brew.sh
-
-# For enhanced drag-and-drop support with Homebrew
-./run_macos.sh
 ```
 
 On Windows:
@@ -102,14 +99,14 @@ You can also run the application directly:
 python borderly_gui.py
 ```
 
-### Drag and Drop
+### Batch Processing
 
-You can drag and drop image files directly onto the application:
+You can process multiple image files at once:
 
 1. Start the application
-2. Select files from your file explorer/finder
-3. Drag them onto the application window's canvas area
-4. Files will be automatically loaded for processing
+2. Select files using "Select Files" or an entire directory with "Select Directory"
+3. Choose a profile or enable "Process with all profiles" checkbox
+4. Click "Process Images" to begin
 
 ### Main Features
 
@@ -151,7 +148,7 @@ Each profile defines how images will be processed:
 This Python GUI implementation provides the same core functionality as the original C# version but adds:
 
 1. Graphical user interface for easier interaction
-2. Drag-and-drop support for images
+2. Directory batch processing
 3. Live preview of processing results
 4. Interactive sliders for quality settings
 5. Visual color picker for border colors

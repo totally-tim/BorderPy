@@ -21,7 +21,7 @@ brew install python-tk || true
 
 # Run the application
 echo "Starting Borderly GUI..."
-python3 borderly_gui.py "$@" || {
+python3 borderly_gui.py || {
     echo "Error running Borderly. Please check the error message above."
     echo "If you're having issues with tkinter, try installing it with: brew install python-tk"
     exit 1
