@@ -95,26 +95,47 @@ class Settings:
     
     @classmethod
     def from_dict(cls, data: Dict) -> 'Settings':
+        # Expand ~ to user's home directory in paths
+        def expand_path(path):
+            if not path:
+                return path
+            if isinstance(path, str) and path.startswith("~"):
+                return os.path.expanduser(path)
+            return path
+            
+        # Expand paths in recent files
+        recent_files = data.get("RecentFiles", [])
+        expanded_recent_files = [expand_path(p) for p in recent_files if p]
+        
         return cls(
-            input_directory=data["InputDirectory"],
-            output_directory=data["OutputDirectory"],
+            input_directory=expand_path(data["InputDirectory"]),
+            output_directory=expand_path(data["OutputDirectory"]),
             processed_file_option=ProcessedFileOption[data.get("ProcessedFileOption", "NONE").upper()],
-            processed_directory=data.get("ProcessedDirectory"),
-            recent_files=data.get("RecentFiles", []),
+            processed_directory=expand_path(data.get("ProcessedDirectory")),
+            recent_files=expanded_recent_files,
             max_recent_files=data.get("MaxRecentFiles", 10)
         )
     
     def to_dict(self) -> Dict:
+        # Use home directory placeholder to avoid exposing full system paths
+        def sanitize_path(path):
+            if not path:
+                return path
+            home = str(Path.home())
+            if path.startswith(home):
+                return "~" + path[len(home):]
+            return path
+        
         result = {
-            "InputDirectory": self.input_directory,
-            "OutputDirectory": self.output_directory,
+            "InputDirectory": sanitize_path(self.input_directory),
+            "OutputDirectory": sanitize_path(self.output_directory),
             "ProcessedFileOption": self.processed_file_option.name.capitalize(),
-            "RecentFiles": self.recent_files,
+            "RecentFiles": [sanitize_path(p) for p in self.recent_files if p],
             "MaxRecentFiles": self.max_recent_files
         }
         
         if self.processed_directory:
-            result["ProcessedDirectory"] = self.processed_directory
+            result["ProcessedDirectory"] = sanitize_path(self.processed_directory)
             
         return result
 
@@ -123,6 +144,14 @@ class ImageProcessor:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.allowed_extensions = {'.jpg', '.jpeg', '.png', '.tif', '.tiff'}
+        
+        # Expand any ~ in paths to user's home directory
+        if self.settings.input_directory and self.settings.input_directory.startswith("~"):
+            self.settings.input_directory = os.path.expanduser(self.settings.input_directory)
+        if self.settings.output_directory and self.settings.output_directory.startswith("~"):
+            self.settings.output_directory = os.path.expanduser(self.settings.output_directory)
+        if self.settings.processed_directory and self.settings.processed_directory.startswith("~"):
+            self.settings.processed_directory = os.path.expanduser(self.settings.processed_directory)
     
     def process(self, input_path: str, profile: Profile) -> None:
         """Process a single image with a single profile."""
@@ -285,10 +314,14 @@ class BorderlyApp:
         self.root.title("Borderly")
         self.root.geometry("900x700")
         
+        # Use generic paths that will be expanded to user's home directory
+        home_placeholder = "~/Documents"
+        output_placeholder = "~/Documents/Borderly_Output" 
+        
         # Set default values
         self.settings = Settings(
-            input_directory=str(Path.home()),
-            output_directory=str(Path.home() / "Borderly_Output"),
+            input_directory=home_placeholder,
+            output_directory=output_placeholder,
             processed_file_option=ProcessedFileOption.NONE
         )
         
@@ -1051,6 +1084,12 @@ Features:
                 messagebox.showerror("Error", "Process directory is required when 'Move' is selected")
             return False
         
+        # Expand paths if they use ~
+        if output_dir and output_dir.startswith("~"):
+            output_dir = os.path.expanduser(output_dir)
+        if processed_dir and processed_dir.startswith("~"):
+            processed_dir = os.path.expanduser(processed_dir)
+        
         # Update settings
         self.settings.output_directory = output_dir
         self.settings.processed_file_option = processed_option
@@ -1212,11 +1251,24 @@ Features:
     
     def _update_settings_ui(self):
         # Update settings tab UI with current settings
-        self.output_dir_var.set(self.settings.output_directory)
+        # Convert absolute paths to relative paths with ~ if possible for better readability
+        home = str(Path.home())
+        
+        # Convert output directory path
+        output_dir = self.settings.output_directory
+        if output_dir and output_dir.startswith(home):
+            output_dir = "~" + output_dir[len(home):]
+        self.output_dir_var.set(output_dir)
+        
+        # Set processed file option
         self.processed_option_var.set(self.settings.processed_file_option.name)
         
+        # Convert processed directory path
         if self.settings.processed_directory:
-            self.processed_dir_var.set(self.settings.processed_directory)
+            processed_dir = self.settings.processed_directory
+            if processed_dir and processed_dir.startswith(home):
+                processed_dir = "~" + processed_dir[len(home):]
+            self.processed_dir_var.set(processed_dir)
         
         self._update_processed_dir_visibility()
     

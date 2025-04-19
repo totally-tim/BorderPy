@@ -1,11 +1,9 @@
 {
   "Settings": {
-    "InputDirectory": "/Users/timkraus",
-    "OutputDirectory": "/Users/timkraus/Borderly_Output",
+    "InputDirectory": "~/Documents",
+    "OutputDirectory": "~/Documents/Borderly_Output",
     "ProcessedFileOption": "None",
-    "RecentFiles": [
-      "/Users/timkraus/Downloads/000013190031.jpg"
-    ],
+    "RecentFiles": [],
     "MaxRecentFiles": 10
   },
   "Profiles": [
@@ -16,7 +14,7 @@
       "Quality": 90
     },
     {
-      "Name": "Black Border",
+      "Name": "BlackBorder",
       "BorderWidth": "20%",
       "BorderColour": "#000000",
       "Quality": 90
