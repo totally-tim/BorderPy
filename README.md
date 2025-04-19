@@ -1,6 +1,6 @@
 # Borderly GUI
 
-A Python reimplementation of the Borderly image processing application with a graphical user interface that allows drag-and-drop functionality and interactive controls.
+A Python reimplementation of the Borderly image processing of Paul Bidwell's https://github.com/paulbidwell/Borderly application with a graphical user interface.
 
 ## Features
 
@@ -142,15 +142,3 @@ Each profile defines how images will be processed:
 - **Border Color**: Color for the border (with visual color picker)
 - **Quality**: JPEG quality setting (1-100)
 - **Resize Width/Height**: Optional resizing of images before adding borders
-
-## Comparison to the Original C# Version
-
-This Python GUI implementation provides the same core functionality as the original C# version but adds:
-
-1. Graphical user interface for easier interaction
-2. Directory batch processing
-3. Live preview of processing results
-4. Interactive sliders for quality settings
-5. Visual color picker for border colors
-6. Progress tracking during batch processing
-7. Multithreaded processing for better performance
