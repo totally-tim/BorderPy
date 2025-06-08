@@ -9,9 +9,9 @@
   "Profiles": [
     {
       "Name": "WhiteBorder",
-      "BorderWidth": "10%",
+      "BorderWidth": "2%",
       "BorderColour": "#FFFFFF",
-      "Quality": 90
+      "Quality": 100
     },
     {
       "Name": "BlackBorder",
